@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DeberesIA - Chat para resolver tareas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🎓 DeberesIA</h1>
+    <div id="chat-window" class="chat-window"></div>
+
+    <form id="chat-form">
+      <textarea id="userInput" placeholder="Escribe tu pregunta o ejercicio aquí..." rows="3"></textarea>
+      <button type="submit">Enviar</button>
+    </form>
+
+    <div id="limit-warning" class="hidden">
+      <p>Has alcanzado el límite de 15 preguntas gratis por hoy.</p>
+      <p><a href="https://tupagina.com/premium" target="_blank">Hazte Premium para seguir usando</a></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
