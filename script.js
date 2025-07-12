@@ -32,7 +32,7 @@ async function sendQuestion(question) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer TU_API_KEY_AQUI' // <--- Cambia aquí con tu API key real
+      'Authorization': 'Bearer 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' // <--- Cambia aquí con tu API key real
     },
     body: JSON.stringify({
       model: 'gpt-3.5-turbo',
