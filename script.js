@@ -1,90 +1,63 @@
-const DAILY_LIMIT = 15;
+<script>
+  const DAILY_LIMIT = 15;
 
-const chatWindow = document.getElementById('chat-window');
-const chatForm = document.getElementById('chat-form');
-const userInput = document.getElementById('userInput');
-const limitWarning = document.getElementById('limit-warning');
+  function getTodayKey() {
+    const today = new Date().toISOString().split('T')[0];
+    return `questions_${today}`;
+  }
 
-function getTodayKey() {
-  const today = new Date().toISOString().split('T')[0];
-  return `questions_${today}`;
-}
+  function getQuestionCount() {
+    return parseInt(localStorage.getItem(getTodayKey()) || '0');
+  }
 
-function getQuestionCount() {
-  return parseInt(localStorage.getItem(getTodayKey()) || '0');
-}
+  function incrementQuestionCount() {
+    const count = getQuestionCount() + 1;
+    localStorage.setItem(getTodayKey(), count);
+  }
 
-function incrementQuestionCount() {
-  const count = getQuestionCount() + 1;
-  localStorage.setItem(getTodayKey(), count);
-}
+  async function sendQuestion() {
+    const responseDiv = document.getElementById('response');
+    const question = document.getElementById('userInput').value;
 
-function appendMessage(text, sender) {
-  const div = document.createElement('div');
-  div.classList.add('message', sender);
-  div.innerText = text;
-  chatWindow.appendChild(div);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-}
+    if (!question.trim()) {
+      responseDiv.innerHTML = "<span style='color:red;'>Por favor, escribe una pregunta.</span>";
+      return;
+    }
 
-async function sendQuestion(question) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer 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' // <--- Cambia aquí con tu API key real
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: `Eres un profesor experto que ayuda a estudiantes a resolver tareas paso a paso con tono claro y amable.`
+    if (getQuestionCount() >= DAILY_LIMIT) {
+      responseDiv.innerHTML = `
+        <div style="color:red;">
+          Has alcanzado el límite de 15 preguntas gratis hoy. 
+          <br><br>
+          <strong><a href="https://tupagina.com/premium" target="_blank">Hazte Premium aquí</a></strong>
+        </div>`;
+      return;
+    }
+
+    responseDiv.innerHTML = "Pensando...";
+
+    try {
+      const res = await fetch('/api/openai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        {
-          role: 'user',
-          content: question
-        }
-      ]
-    })
-  });
+        body: JSON.stringify({ question })
+      });
 
-  if (!response.ok) {
-    throw new Error('Error en la respuesta de la IA');
+      const data = await res.json();
+
+      if (!res.ok) {
+        responseDiv.innerHTML = `<span style="color:red;">Error: ${data.error || 'Algo salió mal'}</span>`;
+        return;
+      }
+
+      responseDiv.innerHTML = `<strong>Respuesta:</strong><br>${data.answer}`;
+      incrementQuestionCount();
+    } catch (error) {
+      responseDiv.innerHTML = `<span style="color:red;">Error al conectar con la IA.</span>`;
+      console.error(error);
+    }
   }
+</script>
 
-  const data = await response.json();
-  return data.choices[0].message.content.trim();
-}
-
-chatForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const question = userInput.value.trim();
-  if (!question) return;
-
-  if (getQuestionCount() >= DAILY_LIMIT) {
-    limitWarning.classList.remove('hidden');
-    return;
-  } else {
-    limitWarning.classList.add('hidden');
-  }
-
-  appendMessage(question, 'user');
-  userInput.value = '';
-  appendMessage("Pensando...", 'bot');
-
-  // Eliminar mensaje "Pensando..." previo
-  const messages = chatWindow.querySelectorAll('.message');
-  const lastBotMsg = Array.from(messages).findLast(m => m.classList.contains('bot'));
-  if (lastBotMsg && lastBotMsg.innerText === "Pensando...") {
-    lastBotMsg.remove();
-  }
-
-  try {
-    const answer = await sendQuestion(question);
-    appendMessage(answer, 'bot');
-    incrementQuestionCount();
-  } catch (err) {
-    appendMessage("Error: No se pudo obtener respuesta. Intenta más tarde.", 'bot');
-  }
-});
